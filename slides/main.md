@@ -57,39 +57,34 @@ Total time: 4.00 seconds
 
 ---
 
-# ZeroMQ: Synchronous vs Asynchronous Messaging
+Synchronous vs Asynchronous Messaging
 
 ---
 
 ## Synchronous Messaging (Request-Reply)
+- client waits for each response
 
+server:
 ```python
-import zmq
-import time
-
-def server():
     context = zmq.Context()
     socket = context.socket(zmq.REP)
     socket.bind("tcp://*:5555")
 
     while True:
         message = socket.recv()
-        print(f"Received request: {message}")
-        time.sleep(1)  # Simulating work
+        time.sleep(1)
         socket.send(b"World")
+```
+client:
+```python
+context = zmq.Context()
+socket = context.socket(zmq.REQ)
+socket.connect("tcp://localhost:5555")
+for request_num in range(10):
+    socket.send(f"Hello-{request_num}".encode())
+    message = socket.recv()
+    print(f"Received reply {request_num}: {message}")
 
-def client():
-    context = zmq.Context()
-    socket = context.socket(zmq.REQ)
-    socket.connect("tcp://localhost:5555")
-
-    for request in range(10):
-        print(f"Sending request {request}")
-        socket.send(b"Hello")
-        message = socket.recv()
-        print(f"Received reply {request}: {message}")
-
-# Run server in a separate process
 ```
 
 ---
@@ -98,16 +93,14 @@ def client():
 
 Server:
 ```
-Received request: b'Hello'
-Received request: b'Hello'
+Received request: b'Hello-0'
+Received request: b'Hello-1'
 ...
 ```
 
 Client:
 ```
-Sending request 0
 Received reply 0: b'World'
-Sending request 1
 Received reply 1: b'World'
 ...
 ```
@@ -116,13 +109,11 @@ Received reply 1: b'World'
 
 ## Asynchronous Messaging (Publish-Subscribe)
 
-```python
-import zmq
-import asyncio
-import time
+- publisher sends without waiting, subscribers receive independently
 
+```python
 async def publisher():
-    context = zmq.Context()
+    context = zmq.asyncio.Context()
     socket = context.socket(zmq.PUB)
     socket.bind("tcp://*:5555")
 
@@ -133,7 +124,7 @@ async def publisher():
         await asyncio.sleep(1)
 
 async def subscriber():
-    context = zmq.Context()
+    context = zmq.asyncio.Context()
     socket = context.socket(zmq.SUB)
     socket.connect("tcp://localhost:5555")
     socket.setsockopt_string(zmq.SUBSCRIBE, "")
@@ -141,10 +132,7 @@ async def subscriber():
     while True:
         message = await socket.recv_string()
         print(f"Received: {message}")
-
-# Run both publisher and subscriber
 ```
-
 ---
 
 ## Asynchronous Messaging Output
