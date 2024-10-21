@@ -11,6 +11,7 @@ transition: slide
 - Critical role in building scalable and resilient distributed systems
 - Challenges in selecting suitable messaging infrastructure
 - Focus on simplifying implementation of effective messaging solutions
+- ZeroMQ: A High-Performance Messaging Library
 
 ---
 
@@ -185,33 +186,105 @@ Received: Update 1634567891
 
 ---
 
-## ZeroMQ: A High-Performance Messaging Library
+### Channels (Topics) in ZeroMQ
 
-- Introduction to ZeroMQ
-- Key features and advantages
-- Python implementation examples
+- In ZeroMQ, channels are often implemented using topics
+- Publishers can send messages on different topics
+- Subscribers can subscribe to specific topics
+- Allows for more granular control over message routing
 
 ---
 
-## ZeroMQ in Python: Basic Example
+### Endpoints in ZeroMQ
 
+- Strings that define where to bind or connect sockets
+- Can use different protocols (tcp, ipc, inproc)
+- Allow for flexible network configurations
+- Examples:
+  - tcp://*:5555 (bind to all interfaces)
+  - tcp://localhost:5555 (connect to localhost)
+  - ipc:///tmp/feeds (use IPC on Unix systems)
+
+---
+
+### Multi-channel Publisher
 ```python
-import zmq
+async def publisher():
+    context = zmq.asyncio.Context()
+    socket = context.socket(zmq.PUB)
+    socket.bind("tcp://*:5555")
 
-context = zmq.Context()
-socket = context.socket(zmq.REP)
-socket.bind("tcp://*:5555")
+    channels = ["sports", "weather", "news"]
 
-while True:
-    message = socket.recv()
-    print(f"Received request: {message}")
-    socket.send(b"World")
+    while True:
+        channel = random.choice(channels)
+        message = f"{channel} update at {time.time()}"
+        await socket.send_string(f"{channel} {message}")
+        print(f"Published: {message}")
+        await asyncio.sleep(1)
+
 ```
 
 ---
 
-## Conclusion
+### Multi-channel Subscriber
+```python
+async def subscriber(channels):
+    context = zmq.asyncio.Context()
+    socket = context.socket(zmq.SUB)
+    socket.connect("tcp://localhost:5555")
+    
+    for channel in channels:
+        socket.setsockopt_string(zmq.SUBSCRIBE, channel)
+    
+    while True:
+        message = await socket.recv_string()
+        print(f"Received: {message}")
+```
 
-- Recap of key concepts
-- Best practices for implementing messaging systems
-- Q&A
+---
+
+### Multiple Endpoints Example
+```python
+async def multi_endpoint_publisher():
+    context = zmq.asyncio.Context()
+    socket = context.socket(zmq.PUB)
+    
+    socket.bind("tcp://*:5555")
+    socket.bind("ipc:///tmp/feeds")
+    
+    while True:
+        message = "Update for all endpoints"
+        await socket.send_string(message)
+        print(f"Published: {message}")
+        await asyncio.sleep(1)
+```
+
+### Connect to Multiple Endpoints
+```python
+async def multi_endpoint_subscriber():
+    context = zmq.asyncio.Context()
+    socket = context.socket(zmq.SUB)
+    
+    socket.connect("tcp://localhost:5555")
+    socket.connect("ipc:///tmp/feeds")
+    
+    socket.setsockopt_string(zmq.SUBSCRIBE, "")
+    
+    while True:
+        message = await socket.recv_string()
+        print(f"Received: {message}")
+```
+
+---
+
+### Key points
+
+- Channels (topics) allow for content-based message filtering
+- Endpoints provide flexibility in network configuration
+- ZeroMQ supports multiple protocols (tcp, ipc, inproc)
+- Publishers can publish on multiple channels
+- Subscribers can subscribe to multiple channels
+- Sockets can bind/connect to multiple endpoints
+
+---
