@@ -288,3 +288,29 @@ async def multi_endpoint_subscriber():
 - Sockets can bind/connect to multiple endpoints
 
 ---
+
+## Publish-Subscribe vs Point-to-Point
+
+| Aspect | Publish-Subscribe | Point-to-Point |
+|--------|-------------------|----------------|
+| **Participants** | One-to-many | One-to-one |
+| **Message Delivery** | Broadcast to all subscribers | Delivered to a single consumer |
+| **Message Retention** | Generally non-persistent | Can be persistent or non-persistent |
+| **Coupling** | Publishers and subscribers are loosely coupled | Senders and receivers are more tightly coupled |
+| **Use Case** | Event broadcasting, real-time updates | Task distribution, load balancing |
+| **Example** | Stock price updates | Job queue in a distributed system |
+
+---
+
+## Request-Reply vs Publish-Subscribe and Point-to-Point
+
+| Aspect | Request-Reply | Publish-Subscribe | Point-to-Point |
+|--------|---------------|-------------------|----------------|
+| **Communication Flow** | Bidirectional | Unidirectional | Unidirectional |
+| **Synchronicity** | Typically synchronous | Asynchronous | Can be both |
+| **Message Lifecycle** | Request expects a reply | No reply expected | No reply expected |
+| **Scalability** | Can be a bottleneck | Highly scalable | Moderately scalable |
+| **Use Case** | RPC, API calls | Real-time updates | Work distribution |
+| **Example** | Database query | Live sports scores | Task queue |
+
+---
