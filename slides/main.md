@@ -32,6 +32,10 @@ transition: slide
 
 ---
 
+![alt text](image.png)
+
+---
+
 ## Publish-Subscribe (Pub/Sub)
 
 - Messages are broadcast to all subscribers
