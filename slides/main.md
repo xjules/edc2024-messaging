@@ -2,7 +2,6 @@
 theme: black
 transition: slide
 ---
-# Messaging Systems in Modern Software Architecture
 
 ![ms](fig/title.webp)
 ---
@@ -13,6 +12,13 @@ transition: slide
 - Challenges in selecting suitable messaging infrastructure
 - Focus on simplifying implementation of effective messaging solutions
 - ZeroMQ: A High-Performance Messaging Library
+
+---
+
+# Reading
+
+- Pieter Hintjens: ZeroMQ: Messaging for Many Applications, 2013
+- Lovisa Johansson: Practical Message Queuing with RabbitMQ, 2021 
 
 ---
 
