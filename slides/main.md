@@ -4,6 +4,7 @@ transition: slide
 ---
 # Messaging Systems in Modern Software Architecture
 
+![ms](fig/title.webp)
 ---
 
 ## Introduction
@@ -32,7 +33,6 @@ transition: slide
 
 ---
 
-![alt text](image.png)
 
 ---
 
