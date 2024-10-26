@@ -3,8 +3,8 @@ import time
 import zmq
 
 
-def take_order():
-    print("1. Taking the order...")
+def process_order():
+    print("1. Processing the order...")
     time.sleep(1)
 
 
