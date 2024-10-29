@@ -57,6 +57,8 @@ async def main():
     step_name = id2step[int(sys.argv[1])]
     context = zmq.asyncio.Context()
     # Connect to receive work from previous step
+    customer_socket = context.socket(zmq.REP)
+    customer_socket.bind("tcp://*:5555")
     receiver = context.socket(zmq.PULL)
     input_port = ports_step[step_name]
     receiver.connect(f"tcp://localhost:{input_port}")
@@ -69,9 +71,10 @@ async def main():
     print(f"{step_name=} ready...")
     consumer_task = None
     if step_name == "process_order":
-        consumer_task = asyncio.create_task(monitor_consumer())
-
-    await do_step_and_notify(receiver, sender, step_name)
+        # consumer_task = asyncio.create_task(monitor_order())
+        await monitor_order(customer_socket, sender)
+    else:
+        await do_step_and_notify(receiver, sender, step_name)
     if consumer_task:
         await consumer_task
 

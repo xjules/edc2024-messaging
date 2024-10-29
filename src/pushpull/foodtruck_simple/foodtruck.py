@@ -2,6 +2,13 @@ import asyncio
 
 import zmq.asyncio
 
+ports_step = {
+    "process_order": 5555,
+    "get_ingredients": 5556,
+    "cook": 5557,
+    "pack_and_hand_over": 5558,
+}
+
 
 async def monitor_update(updates_socket, customer_socket, orders_socket):
     while True:

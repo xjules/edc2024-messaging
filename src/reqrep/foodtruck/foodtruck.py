@@ -35,7 +35,7 @@ def food_truck():
         order = socket.recv_json()
         print(f"Received order: {order}")
 
-        take_order()
+        process_order()
 
         get_ingredients()
 
