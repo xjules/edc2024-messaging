@@ -1,5 +1,6 @@
 import asyncio
 import random
+import time
 
 import zmq
 import zmq.asyncio
@@ -31,6 +32,7 @@ async def customer():
             order = await pull_socket.recv_json()
 
             print(f"Got {order=}")
+            print(f"order took {time.time() - order['start_time']} seconds")
 
     await asyncio.gather(
         asyncio.create_task(orders()), asyncio.create_task(notifications())

@@ -1,5 +1,6 @@
 import asyncio
 import sys
+import time
 
 import zmq.asyncio
 
@@ -38,6 +39,7 @@ async def do_step_and_notify(pull_socket, push_socket, worker_name):
         order = await pull_socket.recv_json()
         if worker_name == "process_order":
             order["order_id"] = order_id
+            order["start_time"] = time.time()
             order_id += 1
             print(f"Received {order=}")
         elif worker_name == "pack_and_hand_over":
