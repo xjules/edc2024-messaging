@@ -1,6 +1,7 @@
 import asyncio
 import json
 import sys
+import time
 
 import zmq.asyncio
 
@@ -30,17 +31,20 @@ next_step = {
 async def router(router_socket):
     order_id = 0
     while True:
-        [worker_id, _, msg] = await router_socket.recv_multipart()
+        [sender_id, _, msg] = await router_socket.recv_multipart()
         order = json.loads(msg)
-        worker_name = worker_id.decode()
-        print(worker_name, order)
-        if worker_name == "customer":
+        sender_name = sender_id.decode()
+        print(sender_name, order)
+        if sender_name == "customer":
             order["order_id"] = order_id
             order_id += 1
-            print(f"New order {order}")
-        print(f"Order {order}: routing from {worker_name} to {next_step[worker_name]}")
+            order["start_time"] = time.time()
+        elif sender_name == "pack_and_hand_over":
+            order["status"] = "complete"
+
+        print(f"Order {order}: routing from {sender_name} to {next_step[sender_name]}")
         await router_socket.send_multipart(
-            [next_step[worker_name].encode(), b"", json.dumps(order).encode()]
+            [next_step[sender_name].encode(), b"", json.dumps(order).encode()]
         )
 
 
@@ -52,12 +56,13 @@ async def do_order_and_notify(worker_name, dealer_socket):
 
         print(f"{worker_name} processing {order=}")
         await asyncio.sleep(work_time[worker_name])
-        result = {
-            "order_id": order["order_id"],
-            "worker_id": worker_name,
-            "status": "completed",
-        }
-        await dealer_socket.send_multipart([b"", json.dumps(result).encode()])
+        await dealer_socket.send_multipart([b"", msg])
+        # result = {
+        #     "order_id": order["order_id"],
+        #     "worker_id": worker_name,
+        #     "status": "completed",
+        # }
+        # await dealer_socket.send_multipart([b"", json.dumps(result).encode()])
 
 
 async def main():
