@@ -30,10 +30,12 @@ def food_truck():
 
     print("Food truck is ready!")
 
+    order_id = 0
     while True:
-        # Wait for order
         order = socket.recv_json()
         print(f"Received order: {order}")
+        order["order_id"] = order_id
+        order_id += 1
 
         process_order()
 
@@ -42,9 +44,10 @@ def food_truck():
         cook()
 
         pack_and_hand_over()
-        # Send response
-        response = {"status": "ready", "order_id": order["order_id"]}
-        socket.send_json(response)
+
+        # Send notification to the customer
+        order["status"] = "complete"
+        socket.send_json(order)
 
 
 if __name__ == "__main__":
