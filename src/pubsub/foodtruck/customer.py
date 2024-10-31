@@ -20,12 +20,10 @@ async def customer():
 
     async def orders():
         while True:
-            # Create order
             order = {"item": random.choice(products)}
 
             print(f"Customer with {order=}")
 
-            # Send order and wait for response
             await updates_socket_pub.send_string("process_order " + json.dumps(order))
             await asyncio.sleep(20)
 
