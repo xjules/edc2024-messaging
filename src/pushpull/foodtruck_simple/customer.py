@@ -11,7 +11,7 @@ async def customer():
     push_socket.bind("tcp://*:5554")
 
     pull_socket = context.socket(zmq.PULL)
-    pull_socket.bind("tcp://*:5553")
+    pull_socket.connect("tcp://localhost:5553")
 
     products = ["hotdog", "hamburger", "ice-cream"]
 
@@ -32,7 +32,9 @@ async def customer():
 
             print(f"Got {order=}")
 
-    await asyncio.gather([await orders(), await notifications()])
+    await asyncio.gather(
+        asyncio.create_task(orders()), asyncio.create_task(notifications())
+    )
 
 
 if __name__ == "__main__":
