@@ -1,31 +1,46 @@
+import asyncio
+import json
+import random
 import time
 
 import zmq
+import zmq.asyncio
 
 
-def customer():
-    context = zmq.Context()
-    socket = context.socket(zmq.REQ)
-    socket.connect("tcp://localhost:5555")
-    order_id = 0
+async def customer():
+    context = zmq.asyncio.Context()
+    orders_socket_sub = context.socket(zmq.SUB)
+    orders_socket_sub.connect("tcp://localhost:5556")
+    orders_socket_sub.setsockopt_string(zmq.SUBSCRIBE, "customer")
 
-    while True:
-        # Create order
-        order = {"order_id": order_id, "item": "hotdog"}
+    updates_socket_pub = context.socket(zmq.PUB)
+    updates_socket_pub.connect("tcp://localhost:5557")
 
-        print(f"Customer {order_id=}")
-        start_time = time.time()
+    products = ["hotdog", "hamburger", "ice-cream"]
 
-        # Send order and wait for response
-        socket.send_json(order)
-        response = socket.recv_json()
+    async def orders():
+        while True:
+            # Create order
+            order = {"item": random.choice(products)}
 
-        print(
-            f"Got order {response['order_id']} after {time.time() - start_time:.1f} seconds"
-        )
-        time.sleep(1)  # Wait before next order
-        order_id += 1
+            print(f"Customer with {order=}")
+
+            # Send order and wait for response
+            await updates_socket_pub.send_string("process_order " + json.dumps(order))
+            await asyncio.sleep(20)
+
+    async def notifications():
+        while True:
+            msg = await orders_socket_sub.recv_string()
+            _, json_data = msg.split(" ", 1)
+            order = json.loads(json_data)
+            print(f"Got {order=}")
+            print(f"order took {time.time() - order['start_time']} seconds")
+
+    await asyncio.gather(
+        asyncio.create_task(orders()), asyncio.create_task(notifications())
+    )
 
 
 if __name__ == "__main__":
-    customer()
+    asyncio.run(customer())

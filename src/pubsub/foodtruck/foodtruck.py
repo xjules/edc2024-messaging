@@ -40,13 +40,14 @@ async def food_truck():
         # Wait for order
         order = await customer_socket.recv_json()
         print(f"Received order: {order}")
-        # publish order
+        # process & publish order to orders
         await orders_socket.send_json(
             {
-                "step": "place_order",
+                "step": "process_order",
                 "order_id": order["order_id"],
             }
         )
+        print("done and process_order sent notification!")
 
     await monitor_task
 
