@@ -2,53 +2,56 @@ import time
 
 import zmq
 
+order_id = 0
 
-def process_order():
+
+def do_order(order):
+    global order_id
     print("1. Processing the order...")
+    order["order_id"] = order_id
+    order["order"] = "ok"
+    order_id += 1
     time.sleep(1)
+    return order
 
 
-def get_ingredients():
+def ingredients(order):
     print("2. Getting ingredients...")
     time.sleep(2)
+    order["ing"] = "ok"
+    return order
 
 
-def cook():
+def cook(order):
     print("3. Cooking")
+    order["cook"] = "ok"
     time.sleep(3)
+    return order
 
 
-def pack_and_hand_over():
+def prepare(order):
     print("4. Packing and handing over")
+    order["prepare"] = "ok"
     time.sleep(1)
+    return order
 
 
-def food_truck():
+def foodtruck():
     context = zmq.Context()
     socket = context.socket(zmq.REP)
     socket.bind("tcp://*:5555")
 
-    print("Food truck is ready!")
-
-    order_id = 0
     while True:
         order = socket.recv_json()
+
         print(f"Received order: {order}")
-        order["order_id"] = order_id
-        order_id += 1
+        order = do_order(order)
+        order = ingredients(order)
+        order = cook(order)
+        order = prepare(order)
 
-        process_order()
-
-        get_ingredients()
-
-        cook()
-
-        pack_and_hand_over()
-
-        # Send notification to the customer
-        order["status"] = "complete"
         socket.send_json(order)
 
 
 if __name__ == "__main__":
-    food_truck()
+    foodtruck()
