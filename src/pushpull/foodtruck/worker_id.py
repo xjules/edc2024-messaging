@@ -5,56 +5,79 @@ import time
 import zmq.asyncio
 
 id2step = {
-    1: "process_order",
-    2: "get_ingredients",
+    1: "order",
+    2: "ingredients",
     3: "cook",
-    4: "pack_and_hand_over",
+    4: "prepare",
 }
 
 work_time = {
-    "process_order": 10,
-    "get_ingredients": 20,
+    "order": 10,
+    "ingredients": 20,
     "cook": 30,
-    "pack_and_hand_over": 10,
+    "prepare": 10,
 }
 
 trigger = {
-    "process_order": "customer",
-    "get_ingredients": "process_order",
-    "cook": "get_ingredients",
-    "pack_and_hand_over": "cook",
+    "order": "customer",
+    "ingredients": "order",
+    "cook": "ingredients",
+    "prepare": "cook",
 }
 ports = {
     "customer": 5554,
-    "process_order": 5555,
-    "get_ingredients": 5556,
+    "order": 5555,
+    "ingredients": 5556,
     "cook": 5557,
-    "pack_and_hand_over": 5553,
+    "prepare": 5553,
 }
 
 
-async def do_step_and_notify(pull_socket, push_socket, worker_name):
-    order_id = 0
-    while True:
-        order = await pull_socket.recv_json()
-        if worker_name == "process_order":
-            order["order_id"] = order_id
-            order["start_time"] = time.time()
-            order_id += 1
-            print(f"Received {order=}")
-        elif worker_name == "pack_and_hand_over":
-            order["status"] = "complete"
-        print(f"{worker_name=} working the {order=}")
-        await asyncio.sleep(work_time[worker_name])
-        push_socket.send_json(order)
+order_id = 0
 
 
-async def main():
-    if len(sys.argv) != 2:
-        print("Usage: worker_id.py step_id")
-        sys.exit(0)
+async def do_order(order):
+    global order_id
+    print("1. Processing the order...")
+    order["order_id"] = order_id
+    order["order"] = "ok"
+    order_id += 1
+    await asyncio.sleep(10)
+    return order
 
-    worker_name = id2step[int(sys.argv[1])]
+
+async def ingredients(order):
+    print("2. Getting ingredients...")
+    time.sleep(2)
+    order["ing"] = "ok"
+    await asyncio.sleep(20)
+    return order
+
+
+async def cook(order):
+    print("3. Cooking")
+    order["cook"] = "ok"
+    await asyncio.sleep(30)
+    return order
+
+
+async def prepare(order):
+    print("4. Packing and handing over")
+    order["prepare"] = "ok"
+    await asyncio.sleep(10)
+    return order
+
+
+work_func = {
+    "order": do_order,
+    "ingredients": ingredients,
+    "cook": cook,
+    "prepare": prepare,
+}
+
+
+async def worker(worker_id):
+    worker_name = id2step[worker_id]
     context = zmq.asyncio.Context()
 
     pull_socket = context.socket(zmq.PULL)
@@ -63,9 +86,14 @@ async def main():
     push_socket = context.socket(zmq.PUSH)
     push_socket.bind(f"tcp://*:{ports[worker_name]}")
 
-    print(f"{worker_name=} ready...")
-    await do_step_and_notify(pull_socket, push_socket, worker_name)
+    while True:
+        order = await pull_socket.recv_json()
+        await work_func[worker_name](order)
+        push_socket.send_json(order)
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    if len(sys.argv) != 2:
+        print("Usage: worker_id.py step_id")
+        sys.exit(0)
+    asyncio.run(worker(int(sys.argv[1])))

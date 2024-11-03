@@ -14,23 +14,15 @@ async def customer():
     pull_socket = context.socket(zmq.PULL)
     pull_socket.connect("tcp://localhost:5553")
 
-    products = ["hotdog", "hamburger", "ice-cream"]
-
     async def orders():
         while True:
-            # Create order
-            order = {"item": random.choice(products)}
-
-            print(f"Customer with {order=}")
-
-            # Send order and wait for response
+            order = {"item": random.choice(["hotdog", "ice-cream"])}
             await push_socket.send_json(order)
             await asyncio.sleep(20)
 
     async def notifications():
         while True:
             order = await pull_socket.recv_json()
-
             print(f"Got {order=}")
             print(f"order took {time.time() - order['start_time']} seconds")
 
