@@ -88,7 +88,7 @@ async def worker(worker_id):
 
     while True:
         order = await pull_socket.recv_json()
-        await work_func[worker_name](order)
+        order = await work_func[worker_name](order)
         push_socket.send_json(order)
 
 

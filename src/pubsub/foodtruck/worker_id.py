@@ -13,25 +13,67 @@ id2step = {
 }
 
 work_time = {
-    "process_order": 10,
-    "get_ingredients": 20,
+    "order": 10,
+    "ingredients": 20,
     "cook": 30,
-    "pack_and_hand_over": 10,
+    "prepare": 10,
 }
 
 trigger = {
-    "process_order": "customer",
-    "get_ingredients": "process_order",
-    "cook": "get_ingredients",
-    "pack_and_hand_over": "cook",
+    "order": "customer",
+    "ingredients": "order",
+    "cook": "ingredients",
+    "prepare": "cook",
 }
 
 next_step = {
-    "customer": "process_order",
-    "process_order": "get_ingredients",
-    "get_ingredients": "cook",
-    "cook": "pack_and_hand_over",
-    "pack_and_hand_over": "customer",
+    "customer": "order",
+    "order": "ingredients",
+    "ingredients": "cook",
+    "cook": "prepare",
+    "prepare": "customer",
+}
+
+order_id = 0
+
+
+async def do_order(order):
+    global order_id
+    print("1. Processing the order...")
+    order["order_id"] = order_id
+    order["order"] = "ok"
+    order_id += 1
+    await asyncio.sleep(10)
+    return order
+
+
+async def ingredients(order):
+    print("2. Getting ingredients...")
+    time.sleep(2)
+    order["ing"] = "ok"
+    await asyncio.sleep(20)
+    return order
+
+
+async def cook(order):
+    print("3. Cooking")
+    order["cook"] = "ok"
+    await asyncio.sleep(30)
+    return order
+
+
+async def prepare(order):
+    print("4. Packing and handing over")
+    order["prepare"] = "ok"
+    await asyncio.sleep(10)
+    return order
+
+
+work_func = {
+    "order": do_order,
+    "ingredients": ingredients,
+    "cook": cook,
+    "prepare": prepare,
 }
 
 
@@ -58,48 +100,30 @@ async def do_order_and_notify(orders_socket_sub, updates_socket_pub, worker_name
         )
 
 
-async def main():
-    if len(sys.argv) != 2:
-        print("Usage: worker_id.py id")
-        return
-    worker_name = id2step[int(sys.argv[1])]
+async def worker(worker_id):
+    worker_name = id2step[worker_id]
     context = zmq.asyncio.Context()
 
-    orders_socket_sub = context.socket(zmq.SUB)
-    orders_socket_sub.connect("tcp://localhost:5556")
-    orders_socket_sub.setsockopt_string(zmq.SUBSCRIBE, worker_name)
+    workers_socket_sub = context.socket(zmq.SUB)
+    workers_socket_sub.connect("tcp://localhost:5556")
+    workers_socket_sub.setsockopt_string(zmq.SUBSCRIBE, worker_name)
 
-    updates_socket_pub = context.socket(zmq.PUB)
-    updates_socket_pub.connect("tcp://localhost:5557")
+    chef_socket_pub = context.socket(zmq.PUB)
+    chef_socket_pub.connect("tcp://localhost:5557")
 
-    print(f"{worker_name=} ready...")
+    while True:
+        msg = await workers_socket_sub.recv_string()
+        _, json_data = msg.split(" ", 1)
+        order = json.loads(json_data)
+        order = await work_func[worker_name](order)
 
-    tasks = []
-    if worker_name == "process_order":
-        # publishing internal orders
-        orders_socket_pub = context.socket(zmq.PUB)
-        orders_socket_pub.bind("tcp://*:5556")
-
-        # updates from workers
-        updates_socket_sub = context.socket(zmq.SUB)
-        updates_socket_sub.setsockopt_string(zmq.SUBSCRIBE, "")
-        updates_socket_sub.bind("tcp://*:5557")
-
-        async def publish_updates():
-            while True:
-                msg = await updates_socket_sub.recv_string()
-                print(msg)
-                await orders_socket_pub.send_string(msg)
-
-        tasks.append(asyncio.create_task(publish_updates()))
-
-    tasks.append(
-        asyncio.create_task(
-            do_order_and_notify(orders_socket_sub, updates_socket_pub, worker_name)
-        ),
-    )
-    await asyncio.gather(*tasks)
+        await chef_socket_pub.send_string(
+            next_step[worker_name] + " " + json.dumps(order)
+        )
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    if len(sys.argv) != 2:
+        print("Usage: worker_id.py step_id")
+        sys.exit(0)
+    asyncio.run(worker(int(sys.argv[1])))
