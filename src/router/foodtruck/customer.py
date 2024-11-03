@@ -13,14 +13,9 @@ async def customer():
     dealer_socket.setsockopt(zmq.IDENTITY, b"customer")
     dealer_socket.connect("tcp://localhost:5556")
 
-    products = ["hotdog", "hamburger", "ice-cream"]
-
     async def orders():
         while True:
-            order = {"item": random.choice(products)}
-
-            print(f"Customer with {order=}")
-
+            order = {"item": random.choice(["hotdog", "ice-cream"])}
             await dealer_socket.send_multipart([b"", json.dumps(order).encode()])
             await asyncio.sleep(20)
 
