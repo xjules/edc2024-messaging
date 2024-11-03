@@ -10,7 +10,6 @@ async def update(msg):
 async def chef():
     context = zmq.asyncio.Context()
 
-    print("Chef ready...")
     workers_socket_pub = context.socket(zmq.PUB)
     workers_socket_pub.bind("tcp://*:5556")
 

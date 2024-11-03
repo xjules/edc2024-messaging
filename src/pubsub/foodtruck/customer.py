@@ -9,27 +9,22 @@ import zmq.asyncio
 
 async def customer():
     context = zmq.asyncio.Context()
-    orders_socket_sub = context.socket(zmq.SUB)
-    orders_socket_sub.connect("tcp://localhost:5556")
-    orders_socket_sub.setsockopt_string(zmq.SUBSCRIBE, "customer")
+    workers_socket_sub = context.socket(zmq.SUB)
+    workers_socket_sub.connect("tcp://localhost:5556")
+    workers_socket_sub.setsockopt_string(zmq.SUBSCRIBE, "customer")
 
-    updates_socket_pub = context.socket(zmq.PUB)
-    updates_socket_pub.connect("tcp://localhost:5557")
-
-    products = ["hotdog", "hamburger", "ice-cream"]
+    chef_socket_pub = context.socket(zmq.PUB)
+    chef_socket_pub.connect("tcp://localhost:5557")
 
     async def orders():
         while True:
-            order = {"item": random.choice(products)}
-
-            print(f"Customer with {order=}")
-
-            await updates_socket_pub.send_string("process_order " + json.dumps(order))
+            order = {"item": random.choice(["hotdog", "hamburger", "ice-cream"])}
+            await chef_socket_pub.send_string("process_order " + json.dumps(order))
             await asyncio.sleep(20)
 
     async def notifications():
         while True:
-            msg = await orders_socket_sub.recv_string()
+            msg = await workers_socket_sub.recv_string()
             _, json_data = msg.split(" ", 1)
             order = json.loads(json_data)
             print(f"Got {order=}")
