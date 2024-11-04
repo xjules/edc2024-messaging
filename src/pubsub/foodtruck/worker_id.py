@@ -1,7 +1,6 @@
 import asyncio
 import json
 import sys
-import time
 
 import zmq.asyncio
 
@@ -49,7 +48,6 @@ async def do_order(order):
 
 async def ingredients(order):
     print("2. Getting ingredients...")
-    time.sleep(2)
     order["ing"] = "ok"
     await asyncio.sleep(20)
     return order
@@ -81,22 +79,20 @@ async def worker(worker_id):
     worker_name = id2step[worker_id]
     context = zmq.asyncio.Context()
 
-    for_workers_socket = context.socket(zmq.SUB)
-    for_workers_socket.connect("tcp://localhost:5556")
-    for_workers_socket.setsockopt_string(zmq.SUBSCRIBE, worker_name)
+    workers_socket = context.socket(zmq.SUB)
+    workers_socket.connect("tcp://localhost:5556")
+    workers_socket.setsockopt_string(zmq.SUBSCRIBE, worker_name)
 
-    for_chef_socket = context.socket(zmq.PUB)
-    for_chef_socket.connect("tcp://localhost:5557")
+    chef_socket = context.socket(zmq.PUB)
+    chef_socket.connect("tcp://localhost:5557")
 
     while True:
-        msg = await for_workers_socket.recv_string()
+        msg = await workers_socket.recv_string()
         _, json_data = msg.split(" ", 1)
         order = json.loads(json_data)
         order = await work_func[worker_name](order)
 
-        await for_chef_socket.send_string(
-            next_step[worker_name] + " " + json.dumps(order)
-        )
+        await chef_socket.send_string(next_step[worker_name] + " " + json.dumps(order))
 
 
 if __name__ == "__main__":
