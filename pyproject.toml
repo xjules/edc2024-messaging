@@ -1,0 +1,8 @@
+[project]
+name = "foodtruck"
+version = "0.1.0"
+description = "Food truck messaging system example"
+requires-python = ">=3.8"
+dependencies = [
+    "pyzmq",
+]
