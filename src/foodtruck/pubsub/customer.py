@@ -19,7 +19,7 @@ async def customer():
     async def orders():
         while True:
             order = {"item": random.choice(["hotdog", "hamburger", "ice-cream"])}
-            await chef_socket.send_string("process_order " + json.dumps(order))
+            await chef_socket.send_string("order " + json.dumps(order))
             await asyncio.sleep(20)
 
     async def notifications():

@@ -4,6 +4,7 @@ import zmq.asyncio
 
 
 def update(msg):
+    print(f"message for chef {msg=}")
     return msg
 
 
@@ -16,6 +17,7 @@ async def chef():
     chef_socket = context.socket(zmq.SUB)
     chef_socket.setsockopt_string(zmq.SUBSCRIBE, "")
     chef_socket.bind("tcp://*:5557")
+    print("Chef ready!")
     while True:
         msg = await chef_socket.recv_string()
         msg = update(msg)

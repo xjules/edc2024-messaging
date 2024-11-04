@@ -7,8 +7,7 @@ import zmq.asyncio
 from foodtruck.utils import do_work, id2step, next_step
 
 
-async def worker(worker_id):
-    worker_name = id2step[worker_id]
+async def worker(worker_name):
     context = zmq.asyncio.Context()
 
     workers_socket = context.socket(zmq.SUB)
@@ -30,4 +29,5 @@ if __name__ == "__main__":
     if len(sys.argv) != 2:
         print("Usage: worker_id.py step_id")
         sys.exit(0)
-    asyncio.run(worker(int(sys.argv[1])))
+    worker_name = id2step[int(sys.argv[1])]
+    asyncio.run(worker(worker_name))
