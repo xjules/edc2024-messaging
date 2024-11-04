@@ -77,47 +77,24 @@ work_func = {
 }
 
 
-async def do_order_and_notify(orders_socket_sub, updates_socket_pub, worker_name):
-    order_id = 0
-    while True:
-        msg = await orders_socket_sub.recv_string()
-        _, json_data = msg.split(" ", 1)
-        order = json.loads(json_data)
-        print(f"Worker's update {order=}")
-        if worker_name == "process_order":
-            order["order_id"] = order_id
-            order_id += 1
-            order["start_time"] = time.time()
-        elif worker_name == "pack_and_hand_over":
-            order["status"] = "complete"
-
-        print(f"{worker_name=} working the {order=}")
-
-        await asyncio.sleep(work_time[worker_name])
-
-        await updates_socket_pub.send_string(
-            next_step[worker_name] + " " + json.dumps(order)
-        )
-
-
 async def worker(worker_id):
     worker_name = id2step[worker_id]
     context = zmq.asyncio.Context()
 
-    workers_socket_sub = context.socket(zmq.SUB)
-    workers_socket_sub.connect("tcp://localhost:5556")
-    workers_socket_sub.setsockopt_string(zmq.SUBSCRIBE, worker_name)
+    for_workers_socket = context.socket(zmq.SUB)
+    for_workers_socket.connect("tcp://localhost:5556")
+    for_workers_socket.setsockopt_string(zmq.SUBSCRIBE, worker_name)
 
-    chef_socket_pub = context.socket(zmq.PUB)
-    chef_socket_pub.connect("tcp://localhost:5557")
+    for_chef_socket = context.socket(zmq.PUB)
+    for_chef_socket.connect("tcp://localhost:5557")
 
     while True:
-        msg = await workers_socket_sub.recv_string()
+        msg = await for_workers_socket.recv_string()
         _, json_data = msg.split(" ", 1)
         order = json.loads(json_data)
         order = await work_func[worker_name](order)
 
-        await chef_socket_pub.send_string(
+        await for_chef_socket.send_string(
             next_step[worker_name] + " " + json.dumps(order)
         )
 
