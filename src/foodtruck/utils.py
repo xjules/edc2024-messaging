@@ -1,5 +1,43 @@
 import asyncio
 
+id2step = {
+    1: "order",
+    2: "ingredients",
+    3: "cook",
+    4: "prepare",
+}
+
+work_time = {
+    "order": 10,
+    "ingredients": 20,
+    "cook": 30,
+    "prepare": 10,
+}
+
+trigger = {
+    "customer": "prepare",
+    "order": "customer",
+    "ingredients": "order",
+    "cook": "ingredients",
+    "prepare": "cook",
+}
+
+next_step = {
+    "customer": "order",
+    "order": "ingredients",
+    "ingredients": "cook",
+    "cook": "prepare",
+    "prepare": "customer",
+}
+
+ports = {
+    "customer": 5554,
+    "order": 5555,
+    "ingredients": 5556,
+    "cook": 5557,
+    "prepare": 5553,
+}
+
 order_id = 0
 
 

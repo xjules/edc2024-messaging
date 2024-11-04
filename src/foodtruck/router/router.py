@@ -2,13 +2,7 @@ import asyncio
 
 import zmq.asyncio
 
-next_step = {
-    "customer": "order",
-    "order": "ingredients",
-    "ingredients": "cook",
-    "cook": "prepare",
-    "prepare": "customer",
-}
+from foodtruck.utils import next_step
 
 
 async def router():
@@ -18,8 +12,9 @@ async def router():
     while True:
         [sender_id, _, msg] = await router_socket.recv_multipart()
         sender_name = sender_id.decode()
-        print(f"Routing from {sender_name} to {next_step[sender_name]}")
-        await router_socket.send_multipart([next_step[sender_name].encode(), b"", msg])
+        receiver_name = next_step[sender_name]
+        print(f"Routing from {sender_name} to {receiver_name}")
+        await router_socket.send_multipart([receiver_name.encode(), b"", msg])
 
 
 if __name__ == "__main__":
