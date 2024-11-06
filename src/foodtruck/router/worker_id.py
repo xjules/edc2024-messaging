@@ -13,11 +13,12 @@ async def worker(worker_name):
     dealer_socket = context.socket(zmq.DEALER)
     dealer_socket.setsockopt(zmq.IDENTITY, worker_name.encode())
     dealer_socket.connect("tcp://localhost:5556")
+    # worker_name in ("cust", "order", "ing", "cook", "prep")
 
-    while True:
+    while True:  # cook
         [_, msg] = await dealer_socket.recv_multipart()
         order = json.loads(msg)
-        order = await do_work(worker_name, order)
+        order = await do_work("cook", order)
         await dealer_socket.send_multipart([b"", json.dumps(order).encode()])
 
 

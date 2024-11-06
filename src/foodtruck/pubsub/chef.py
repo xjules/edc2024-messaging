@@ -11,8 +11,8 @@ def update(msg):
 async def chef():
     context = zmq.asyncio.Context()
 
-    workers_socket = context.socket(zmq.PUB)
-    workers_socket.bind("tcp://*:5556")
+    unit_socket = context.socket(zmq.PUB)
+    unit_socket.bind("tcp://*:5556")
 
     chef_socket = context.socket(zmq.SUB)
     chef_socket.setsockopt_string(zmq.SUBSCRIBE, "")
@@ -21,7 +21,7 @@ async def chef():
     while True:
         msg = await chef_socket.recv_string()
         msg = update(msg)
-        await workers_socket.send_string(msg)
+        await unit_socket.send_string(msg)
 
 
 if __name__ == "__main__":
